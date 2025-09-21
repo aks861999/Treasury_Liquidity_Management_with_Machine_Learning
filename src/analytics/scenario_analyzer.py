@@ -337,4 +337,219 @@ def compare_scenarios(base_case: Dict, scenario_results: Dict) -> Dict:
                 'deposit_change_pct': (metrics.get('total_deposits', 0) - base_deposits) / base_deposits * 100,
                 'lcr_change': metrics.get('stressed_lcr_ratio', 0) - base_lcr,
                 'lcr_breach_risk': metrics.get('lcr_breach', False),
-                'dar_
+                'dar_change': metrics.get('stressed_dar_95', 0) - base_dar,
+                'funding_gap': metrics.get('funding_gap', 0)
+            }
+            
+            # Risk assessment
+            if comparison['deposit_change_pct'] < -20:
+                comparison['risk_level'] = 'High'
+            elif comparison['deposit_change_pct'] < -10:
+                comparison['risk_level'] = 'Medium'
+            else:
+                comparison['risk_level'] = 'Low'
+            
+            comparisons[scenario_name] = comparison
+        
+        logger.info(f"Compared {len(scenario_results)} scenarios against base case")
+        return comparisons
+        
+    except Exception as e:
+        logger.error(f"Error comparing scenarios: {e}")
+        return {}
+
+def assess_scenario_risks(scenario_results: Dict) -> Dict:
+    """Assess overall risk implications of scenarios"""
+    try:
+        risk_assessment = {
+            'highest_risk_scenario': None,
+            'lowest_risk_scenario': None,
+            'critical_scenarios': [],
+            'risk_factors': {}
+        }
+        
+        scenario_risks = {}
+        
+        for scenario_name, scenario_data in scenario_results.items():
+            metrics = scenario_data.get('metrics', {})
+            
+            # Calculate composite risk score
+            risk_score = 0
+            
+            # LCR breach (40% weight)
+            if metrics.get('lcr_breach', False):
+                risk_score += 40
+            elif metrics.get('stressed_lcr_ratio', 1) < 1.1:
+                risk_score += 20
+            
+            # Deposit loss (30% weight)
+            deposit_loss = abs(metrics.get('deposit_change_pct', 0))
+            if deposit_loss > 30:
+                risk_score += 30
+            elif deposit_loss > 15:
+                risk_score += 20
+            elif deposit_loss > 5:
+                risk_score += 10
+            
+            # Funding gap (20% weight)
+            funding_gap = metrics.get('funding_gap', 0)
+            if funding_gap > 1e9:  # $1B
+                risk_score += 20
+            elif funding_gap > 5e8:  # $500M
+                risk_score += 15
+            elif funding_gap > 1e8:  # $100M
+                risk_score += 10
+            
+            # Flow volatility (10% weight)
+            flow_vol = metrics.get('flow_volatility', 0)
+            base_vol = 1e6  # Assume $1M base volatility
+            if flow_vol > base_vol * 3:
+                risk_score += 10
+            elif flow_vol > base_vol * 2:
+                risk_score += 5
+            
+            scenario_risks[scenario_name] = risk_score
+            
+            # Flag critical scenarios
+            if risk_score >= 70:
+                risk_assessment['critical_scenarios'].append({
+                    'name': scenario_name,
+                    'risk_score': risk_score,
+                    'issues': []
+                })
+        
+        # Find highest and lowest risk scenarios
+        if scenario_risks:
+            risk_assessment['highest_risk_scenario'] = max(scenario_risks, key=scenario_risks.get)
+            risk_assessment['lowest_risk_scenario'] = min(scenario_risks, key=scenario_risks.get)
+        
+        # Risk factors analysis
+        risk_assessment['risk_factors'] = {
+            'lcr_breaches': sum(1 for s in scenario_results.values() 
+                               if s.get('metrics', {}).get('lcr_breach', False)),
+            'high_deposit_loss': sum(1 for s in scenario_results.values() 
+                                   if abs(s.get('metrics', {}).get('deposit_change_pct', 0)) > 20),
+            'funding_gaps': sum(1 for s in scenario_results.values() 
+                              if s.get('metrics', {}).get('funding_gap', 0) > 1e8)
+        }
+        
+        logger.info("Risk assessment completed")
+        return risk_assessment
+        
+    except Exception as e:
+        logger.error(f"Error assessing scenario risks: {e}")
+        return {}
+
+def generate_scenario_report(scenario_results: Dict) -> Dict:
+    """Generate comprehensive scenario analysis report"""
+    try:
+        report = {
+            'executive_summary': {},
+            'scenario_results': scenario_results,
+            'key_findings': [],
+            'recommendations': [],
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        # Executive summary
+        base_case = scenario_results.get('base_case', {})
+        comparisons = scenario_results.get('comparative_analysis', {})
+        risk_assessment = scenario_results.get('risk_assessment', {})
+        
+        report['executive_summary'] = {
+            'scenarios_analyzed': len(scenario_results.get('scenario_results', {})),
+            'critical_scenarios': len(risk_assessment.get('critical_scenarios', [])),
+            'worst_case_scenario': risk_assessment.get('highest_risk_scenario', 'Unknown'),
+            'base_case_lcr': base_case.get('lcr_ratio', 1.0)
+        }
+        
+        # Key findings
+        key_findings = []
+        
+        # LCR findings
+        lcr_breaches = risk_assessment.get('risk_factors', {}).get('lcr_breaches', 0)
+        if lcr_breaches > 0:
+            key_findings.append(f"LCR breaches occur in {lcr_breaches} scenario(s)")
+        
+        # Deposit loss findings
+        high_loss_scenarios = risk_assessment.get('risk_factors', {}).get('high_deposit_loss', 0)
+        if high_loss_scenarios > 0:
+            key_findings.append(f"Significant deposit losses (>20%) in {high_loss_scenarios} scenario(s)")
+        
+        # Funding gap findings
+        funding_gap_scenarios = risk_assessment.get('risk_factors', {}).get('funding_gaps', 0)
+        if funding_gap_scenarios > 0:
+            key_findings.append(f"Funding gaps identified in {funding_gap_scenarios} scenario(s)")
+        
+        report['key_findings'] = key_findings
+        
+        # Recommendations
+        recommendations = []
+        
+        if lcr_breaches > 0:
+            recommendations.append("Increase liquid asset buffer to maintain LCR above regulatory minimum")
+        
+        if high_loss_scenarios > 0:
+            recommendations.append("Develop deposit retention strategies for high-risk scenarios")
+        
+        if funding_gap_scenarios > 0:
+            recommendations.append("Establish contingent funding sources for stress scenarios")
+        
+        worst_scenario = risk_assessment.get('highest_risk_scenario')
+        if worst_scenario:
+            recommendations.append(f"Develop specific action plan for {worst_scenario} scenario")
+        
+        if not recommendations:
+            recommendations.append("Current liquidity position appears resilient to analyzed scenarios")
+        
+        report['recommendations'] = recommendations
+        
+        logger.info("Scenario analysis report generated")
+        return report
+        
+    except Exception as e:
+        logger.error(f"Error generating scenario report: {e}")
+        return {}
+
+# Predefined scenario templates
+def get_standard_scenarios() -> Dict:
+    """Get standard scenario templates for testing"""
+    return {
+        'mild_rate_shock': {
+            'interest_rate_shock': 100,  # 100 bps
+            'deposit_outflow_rate': 0.05,
+            'vix_shock': 10,
+            'economic_shock': 'none'
+        },
+        'severe_rate_shock': {
+            'interest_rate_shock': 300,  # 300 bps
+            'deposit_outflow_rate': 0.20,
+            'vix_shock': 20,
+            'economic_shock': 'mild_recession'
+        },
+        'financial_crisis': {
+            'interest_rate_shock': 0,
+            'deposit_outflow_rate': 0.30,
+            'vix_shock': 40,
+            'economic_shock': 'financial_crisis'
+        },
+        'economic_recession': {
+            'interest_rate_shock': -200,  # Rate cuts
+            'deposit_outflow_rate': 0.15,
+            'vix_shock': 25,
+            'economic_shock': 'severe_recession'
+        }
+    }
+
+if __name__ == "__main__":
+    # Example usage
+    logger.info("Scenario analyzer module loaded successfully")
+    print("Available functions:")
+    print("- run_scenario_analysis")
+    print("- calculate_base_case_metrics")
+    print("- apply_scenario_shocks")
+    print("- calculate_scenario_metrics")
+    print("- compare_scenarios")
+    print("- assess_scenario_risks")
+    print("- generate_scenario_report")
+    print("- get_standard_scenarios")
