@@ -1,3 +1,5 @@
+# Fix the performance_metrics.py file - complete the missing parts
+
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -20,6 +22,8 @@ def calculate_prediction_accuracy_metrics(actual: np.ndarray, predicted: np.ndar
         
         # Basic accuracy metrics
         metrics['mse'] = mean_squared_error(actual, predicted)
+        metrics['rmse'] = np.sqrt(metrics['mse'])
+        metrics['mae'] = mean_absolute_error(actual, predicted)
         metrics['r2'] = r2_score(actual, predicted)
         
         # MAPE with zero protection
@@ -538,6 +542,4 @@ if __name__ == "__main__":
     print("- calculate_model_stability_metrics")
     print("- calculate_feature_importance_metrics")
     print("- calculate_comparative_performance")
-    print("- generate_performance_report")mse'] = np.sqrt(metrics['mse'])
-        metrics['mae'] = mean_absolute_error(actual, predicted)
-        metrics['r
+    print("- generate_performance_report")

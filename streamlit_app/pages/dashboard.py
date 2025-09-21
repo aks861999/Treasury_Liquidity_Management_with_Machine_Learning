@@ -27,23 +27,23 @@ def display_dashboard():
         # Dashboard header
         st.markdown("""
         <div style='text-align: center; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; margin-bottom: 2rem;'>
-            <h1 style='color: white; margin: 0; font-size: 2.5rem;'>🏦 Treasury Behavioral Deposit Analytics</h1>
+            <h1 style='color: white; margin: 0; font-size: 2.5rem;'>Treasury Behavioral Deposit Analytics</h1>
             <p style='color: white; opacity: 0.9; margin: 0.5rem 0 0 0; font-size: 1.2rem;'>Real-time Risk Management & Liquidity Analytics</p>
         </div>
         """, unsafe_allow_html=True)
         
         # Check if data is loaded
         if not st.session_state.get('data_loaded', False):
-            st.warning("⚠️ No data loaded. Please use the sidebar to load data first.")
+            st.warning("No data loaded. Please use the sidebar to load data first.")
             
             # Quick start guide
-            with st.expander("📚 Quick Start Guide", expanded=True):
+            with st.expander("Quick Start Guide", expanded=True):
                 st.markdown("""
                 **Get started in 3 easy steps:**
                 
-                1. 🔄 **Load Data**: Click "Load Data" in the sidebar to collect market data and generate customer data
-                2. 🎯 **Train Models**: Once data is loaded, click "Train Models" to build ML models  
-                3. 📊 **Explore**: Navigate through different pages to explore insights and analytics
+                1. **Load Data**: Click "Load Data" in the sidebar to collect market data and generate customer data
+                2. **Train Models**: Once data is loaded, click "Train Models" to build ML models  
+                3. **Explore**: Navigate through different pages to explore insights and analytics
                 
                 **What you'll see:**
                 - Real-time market conditions and key performance indicators
@@ -63,7 +63,7 @@ def display_dashboard():
         current_metrics = calculate_current_metrics(market_data, customer_data)
         
         # Key Performance Indicators
-        st.subheader("📊 Key Performance Indicators")
+        st.subheader("Key Performance Indicators")
         display_key_metrics_cards(current_metrics)
         
         # Main content area
@@ -71,7 +71,7 @@ def display_dashboard():
         
         with col1:
             # Deposit flow analysis
-            st.subheader("💸 Deposit Flow Analysis")
+            st.subheader("Deposit Flow Analysis")
             
             unified_ts = aggregated_data.get('unified_timeseries', pd.DataFrame())
             flows = customer_data.get('flows', pd.DataFrame())
@@ -85,7 +85,7 @@ def display_dashboard():
             
             # Add flow statistics
             if not flows.empty:
-                with st.expander("📈 Flow Statistics", expanded=False):
+                with st.expander("Flow Statistics", expanded=False):
                     col1_exp, col2_exp = st.columns(2)
                     
                     with col1_exp:
@@ -98,7 +98,7 @@ def display_dashboard():
         
         with col2:
             # Current market conditions
-            st.subheader("🌡️ Market Environment")
+            st.subheader("Market Environment")
             
             if not market_data.empty:
                 # Market condition indicators
@@ -106,21 +106,19 @@ def display_dashboard():
                 
                 # Interest rate environment
                 fed_rate = latest_market.get('FED_FUNDS_RATE', 2.0)
-                rate_color = "🔴" if fed_rate > 5 else "🟡" if fed_rate > 2 else "🟢"
-                st.write(f"{rate_color} **Fed Funds Rate**: {fed_rate:.2f}%")
+                rate_color = "High" if fed_rate > 5 else "Medium" if fed_rate > 2 else "Low"
+                st.write(f"**Fed Funds Rate**: {fed_rate:.2f}% ({rate_color})")
                 
                 # Market stress level
                 vix = latest_market.get('VIX', 20)
-                stress_color = "🔴" if vix > 30 else "🟡" if vix > 20 else "🟢"
                 stress_level = "High" if vix > 30 else "Medium" if vix > 20 else "Low"
-                st.write(f"{stress_color} **Market Stress**: {stress_level} (VIX: {vix:.1f})")
+                st.write(f"**Market Stress**: {stress_level} (VIX: {vix:.1f})")
                 
                 # Yield curve
                 if all(col in market_data.columns for col in ['TREASURY_10Y', 'TREASURY_2Y']):
                     spread = latest_market['TREASURY_10Y'] - latest_market['TREASURY_2Y']
-                    curve_color = "🔴" if spread < 0 else "🟡" if spread < 0.5 else "🟢"
                     curve_shape = "Inverted" if spread < 0 else "Flat" if spread < 0.5 else "Normal"
-                    st.write(f"{curve_color} **Yield Curve**: {curve_shape} ({spread:.1f}bps)")
+                    st.write(f"**Yield Curve**: {curve_shape} ({spread:.1f}bps)")
                 
                 # Add mini yield curve chart
                 create_yield_curve_chart(market_data)
@@ -128,32 +126,32 @@ def display_dashboard():
                 st.info("No market data available")
             
             # Risk alerts
-            st.subheader("⚠️ Risk Alerts")
+            st.subheader("Risk Alerts")
             
             alerts = []
             
             # LCR alert
             lcr_ratio = current_metrics.get('lcr_ratio', 1.15)
             if lcr_ratio < 1.0:
-                alerts.append("🔴 **CRITICAL**: LCR below regulatory minimum")
+                alerts.append("**CRITICAL**: LCR below regulatory minimum")
             elif lcr_ratio < 1.1:
-                alerts.append("🟡 **WARNING**: LCR below buffer threshold")
+                alerts.append("**WARNING**: LCR below buffer threshold")
             
             # Market stress alert
             if vix > 30:
-                alerts.append("🔴 **HIGH STRESS**: Elevated market volatility")
+                alerts.append("**HIGH STRESS**: Elevated market volatility")
             
             # Flow volatility alert
             if not flows.empty:
                 flow_vol = flows['deposit_flow'].std()
                 if flow_vol > flows['deposit_flow'].mean() * 0.5:
-                    alerts.append("🟡 **ATTENTION**: High deposit flow volatility")
+                    alerts.append("**ATTENTION**: High deposit flow volatility")
             
             if alerts:
                 for alert in alerts:
                     st.warning(alert)
             else:
-                st.success("✅ **ALL CLEAR**: No immediate risk alerts")
+                st.success("**ALL CLEAR**: No immediate risk alerts")
         
         st.markdown("---")
         
@@ -161,7 +159,7 @@ def display_dashboard():
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("🎯 Customer Segments")
+            st.subheader("Customer Segments")
             
             customers = customer_data.get('customers', pd.DataFrame())
             if not customers.empty:
@@ -177,13 +175,13 @@ def display_dashboard():
                 # Flatten column names
                 segment_stats.columns = [f"{col[1]}_{col[0]}" if col[1] else col[0] for col in segment_stats.columns]
                 
-                with st.expander("📊 Segment Details", expanded=False):
+                with st.expander("Segment Details", expanded=False):
                     st.dataframe(segment_stats, use_container_width=True)
             else:
                 st.info("No customer data available")
         
         with col2:
-            st.subheader("🤖 Model Performance")
+            st.subheader("Model Performance")
             
             if st.session_state.get('models_trained', False):
                 models = st.session_state.models
@@ -220,7 +218,7 @@ def display_dashboard():
             else:
                 st.info("No models trained yet. Use the sidebar to train models.")
                 
-                if st.button("🚀 Quick Train Models"):
+                if st.button("Quick Train Models"):
                     # This would trigger model training
                     st.info("Model training would be initiated here...")
         
@@ -230,7 +228,7 @@ def display_dashboard():
         with col2:
             st.markdown(
                 f"<div style='text-align: center; color: #666; font-size: 0.8rem;'>"
-                f"📊 Dashboard last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>",
+                f"Dashboard last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>",
                 unsafe_allow_html=True
             )
         
@@ -256,7 +254,7 @@ def create_summary_cards():
             metrics.append({
                 'title': 'Market Data Points',
                 'value': len(market_data),
-                'icon': '📈'
+                'icon': 'Chart'
             })
         
         customers = customer_data.get('customers', pd.DataFrame())
@@ -264,7 +262,7 @@ def create_summary_cards():
             metrics.append({
                 'title': 'Total Customers',
                 'value': len(customers),
-                'icon': '👥'
+                'icon': 'Users'
             })
         
         flows = customer_data.get('flows', pd.DataFrame())
@@ -272,7 +270,7 @@ def create_summary_cards():
             metrics.append({
                 'title': 'Flow Records',
                 'value': len(flows),
-                'icon': '💸'
+                'icon': 'Dollar'
             })
         
         # Display metrics in columns
@@ -282,6 +280,106 @@ def create_summary_cards():
                 st.markdown(f"""
                 <div style='background: white; padding: 1rem; border-radius: 10px; text-align: center; 
                      border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                    <div style='font-size: 2rem; margin-bottom: 0.5rem;'>{metric['icon']}</div>
                     <div style='font-size: 1.5rem; font-weight: bold; color: #333;'>{metric['value']:,}</div>
-                    <div style='color: #666; font-size: 0.9rem;'>{metric['title']
+                    <div style='color: #666; font-size: 0.9rem;'>{metric['title']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+    except Exception as e:
+        st.error(f"Error creating summary cards: {e}")
+
+def display_risk_overview():
+    """Display risk overview section"""
+    try:
+        st.subheader("Risk Overview")
+        
+        # Mock risk data for demonstration
+        risk_metrics = {
+            'lcr_ratio': np.random.uniform(1.05, 1.25),
+            'var_95': np.random.uniform(1000000, 5000000),
+            'deposit_concentration': np.random.uniform(0.15, 0.35),
+            'behavioral_risk': np.random.uniform(0.3, 0.7)
+        }
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            lcr = risk_metrics['lcr_ratio']
+            lcr_status = "Good" if lcr > 1.1 else "Warning" if lcr > 1.0 else "Critical"
+            st.metric("LCR Ratio", f"{lcr:.2%}", f"{lcr_status}")
+        
+        with col2:
+            var = risk_metrics['var_95']
+            st.metric("VaR (95%)", f"${var/1e6:.1f}M")
+        
+        with col3:
+            concentration = risk_metrics['deposit_concentration']
+            conc_status = "Low" if concentration < 0.2 else "Medium" if concentration < 0.3 else "High"
+            st.metric("Concentration", f"{concentration:.1%}", f"{conc_status}")
+        
+        with col4:
+            behav_risk = risk_metrics['behavioral_risk']
+            behav_status = "Low" if behav_risk < 0.4 else "Medium" if behav_risk < 0.6 else "High"
+            st.metric("Behavioral Risk", f"{behav_risk:.2f}", f"{behav_status}")
+        
+    except Exception as e:
+        st.error(f"Error displaying risk overview: {e}")
+
+def display_market_summary():
+    """Display market conditions summary"""
+    try:
+        if not st.session_state.get('data_loaded', False):
+            return
+        
+        aggregated_data = st.session_state.aggregated_data
+        market_data = aggregated_data.get('market_data', pd.DataFrame())
+        
+        if market_data.empty:
+            return
+        
+        st.subheader("Market Conditions")
+        
+        latest = market_data.iloc[-1]
+        
+        # Create market condition summary
+        conditions = []
+        
+        # Fed funds rate analysis
+        fed_rate = latest.get('FED_FUNDS_RATE', 2.0)
+        if fed_rate < 1:
+            conditions.append("Low interest rate environment supports deposit growth")
+        elif fed_rate > 5:
+            conditions.append("High interest rate environment may pressure deposits")
+        else:
+            conditions.append("Normal interest rate environment")
+        
+        # VIX analysis
+        vix = latest.get('VIX', 20)
+        if vix < 20:
+            conditions.append("Low market volatility indicates stable conditions")
+        elif vix > 30:
+            conditions.append("High market volatility suggests increased uncertainty")
+        else:
+            conditions.append("Moderate market volatility")
+        
+        # Yield curve analysis
+        if all(col in market_data.columns for col in ['TREASURY_10Y', 'TREASURY_2Y']):
+            spread = latest['TREASURY_10Y'] - latest['TREASURY_2Y']
+            if spread < 0:
+                conditions.append("Inverted yield curve signals potential economic slowdown")
+            elif spread < 0.5:
+                conditions.append("Flat yield curve indicates uncertain economic outlook")
+            else:
+                conditions.append("Normal yield curve suggests stable economic conditions")
+        
+        # Display conditions
+        for condition in conditions:
+            st.write(f"• {condition}")
+        
+    except Exception as e:
+        st.error(f"Error displaying market summary: {e}")
+
+if __name__ == "__main__":
+    # Test the dashboard page
+    st.title("Dashboard Page Test")
+    display_dashboard()
